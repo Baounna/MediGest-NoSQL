@@ -29,8 +29,10 @@ class DBManager:
 
         # Création des index pour la performance
         self.db.patients.create_index([("nom", ASCENDING), ("prenom", ASCENDING)])
-        self.db.appointments.create_index([("date_heure", ASCENDING)])
+        self.db.appointments.create_index([("date_heure_debut", ASCENDING)])
+        self.db.appointments.create_index([("practitioner_name", ASCENDING), ("date_heure_debut", ASCENDING)])
         self.db.logs.create_index([("timestamp", DESCENDING)])
+        self.db.users.create_index("username", unique=True)
         
         # Création d'un admin par défaut si la collection users est vide
         if self.db.users.count_documents({}) == 0:
@@ -174,15 +176,26 @@ class DBManager:
             return False, str(e)
 
     def delete_practitioner(self, practitioner_id, deleted_by):
-        """Supprime un praticien."""
+        """Supprime un praticien après vérification des RDV futurs."""
         try:
-            # Vérifier s'il a des rendez-vous futurs (optionnel, mais recommandé)
-            # Ici on fait une suppression simple pour l'exemple
+            prac = self.db.practitioners.find_one({"_id": ObjectId(practitioner_id)})
+            if not prac:
+                return False, "Praticien introuvable."
+
+            # Vérifier s'il a des rendez-vous futurs non annulés
+            future_appts = self.db.appointments.count_documents({
+                "practitioner_name": prac["nom"],
+                "date_heure_debut": {"$gte": datetime.datetime.now()},
+                "statut": {"$not": {"$regex": "^Annulé"}}
+            })
+            if future_appts > 0:
+                return False, f"Impossible : {future_appts} rendez-vous futur(s) existent pour ce praticien."
+
             res = self.db.practitioners.delete_one({"_id": ObjectId(practitioner_id)})
             if res.deleted_count > 0:
-                self.log_action(deleted_by, "DELETE_PRACTITIONER", f"Praticien {practitioner_id} supprimé")
+                self.log_action(deleted_by, "DELETE_PRACTITIONER", f"Praticien {prac['nom']} supprimé")
                 return True, "Praticien supprimé."
-            return False, "Praticien introuvable."
+            return False, "Erreur lors de la suppression."
         except Exception as e:
             return False, str(e)
 
@@ -193,7 +206,7 @@ class DBManager:
         # Un RDV chevauche si : (StartA < EndB) et (EndA > StartB)
         query = {
             "practitioner_name": practitioner_name,
-            "statut": {"$ne": "Annulé"}, # On ignore les RDV annulés
+            "statut": {"$not": {"$regex": "^Annulé"}},  # Ignore tous les statuts commençant par "Annulé"
             "$and": [
                 {"date_heure_debut": {"$lt": end_time}},
                 {"date_heure_fin": {"$gt": start_time}}
@@ -209,8 +222,12 @@ class DBManager:
 
     def create_appointment(self, patient_id, practitioner_name, start_time, duration_minutes, motif, created_by):
         """Crée un rendez-vous avec validation de chevauchement."""
+        # Vérifier que le RDV n'est pas dans le passé
+        if start_time < datetime.datetime.now():
+            return False, "Impossible de créer un rendez-vous dans le passé."
+
         end_time = start_time + datetime.timedelta(minutes=duration_minutes)
-        
+
         if self.check_appointment_overlap(practitioner_name, start_time, end_time):
             return False, "Le praticien n'est pas disponible sur ce créneau."
 
@@ -324,16 +341,16 @@ class DBManager:
     # --- Statistiques ---
 
     def get_stats_cancellation_rate(self):
-        """Calcule le taux d'annulation."""
+        """Calcule le taux d'annulation (tous types confondus)."""
         total = self.db.appointments.count_documents({})
-        cancelled = self.db.appointments.count_documents({"statut": "Annulé"})
+        cancelled = self.db.appointments.count_documents({"statut": {"$regex": "^Annulé"}})
         if total == 0: return 0
         return (cancelled / total) * 100
 
     def get_stats_workload(self):
-        """Charge de travail par médecin (nombre de RDV confirmés/réalisés)."""
+        """Charge de travail par médecin (nombre de RDV non annulés)."""
         pipeline = [
-            {"$match": {"statut": {"$ne": "Annulé"}}},
+            {"$match": {"statut": {"$not": {"$regex": "^Annulé"}}}},
             {"$group": {"_id": "$practitioner_name", "count": {"$sum": 1}}}
         ]
         return list(self.db.appointments.aggregate(pipeline))
@@ -355,7 +372,7 @@ class DBManager:
 
         # Appointments by day of week
         dow_pipeline = [
-            {"$match": {"statut": {"$ne": "Annulé"}}},
+            {"$match": {"statut": {"$not": {"$regex": "^Annulé"}}}},
             {"$group": {
                 "_id": {"$dayOfWeek": "$date_heure_debut"},
                 "count": {"$sum": 1}

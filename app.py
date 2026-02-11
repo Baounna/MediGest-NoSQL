@@ -1005,9 +1005,9 @@ if 'user' not in st.session_state:
 # --- Utility: Status Badge ---
 def status_badge(statut):
     """Returns styled HTML badge for appointment status."""
-    if statut == "Confirme":
-        return '<span class="badge badge-confirmed">Confirme</span>'
-    elif "Annule" in statut or statut == "Annulé":
+    if statut == "Confirmé":
+        return '<span class="badge badge-confirmed">Confirmé</span>'
+    elif statut.startswith("Annulé"):
         return f'<span class="badge badge-cancelled">{statut}</span>'
     elif statut == "Absent":
         return '<span class="badge badge-absent">Absent</span>'
@@ -1198,7 +1198,7 @@ def view_accueil():
             for index, row in df_display.iterrows():
                 badge = status_badge(row['statut'])
 
-                with st.expander(f"🕐 {row['Heure']} — {row['patient_nom']} (Dr. {row['practitioner_name']})"):
+                with st.expander(f"🕐 {row['Heure']} — {row['patient_nom']} ({row['practitioner_name']})"):
                     c_info1, c_info2, c_info3 = st.columns(3)
                     c_info1.markdown(f"**Motif:** {row['motif']}")
                     c_info2.markdown(f"**Statut:** {badge}", unsafe_allow_html=True)
@@ -1453,7 +1453,7 @@ def view_accueil():
 
                             st.divider()
                     else:
-                        st.info(f"Aucun rendez-vous pour Dr. {prac_name}.")
+                        st.info(f"Aucun rendez-vous pour {prac_name}.")
         else:
             st.info("Aucun rendez-vous dans le systeme.")
 
