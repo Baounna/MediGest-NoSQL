@@ -1561,11 +1561,12 @@ def view_admin():
             new_role = st.selectbox("Role", ["Accueil", "Responsable", "Administrateur"])
 
             if st.form_submit_button("Creer", use_container_width=True):
-                if st.session_state.db.create_user(new_user, new_pass, new_role, st.session_state.user["username"]):
-                    st.success(f"Utilisateur {new_user} cree !")
+                success, msg = st.session_state.db.create_user(new_user, new_pass, new_role, st.session_state.user["username"])
+                if success:
+                    st.success(msg)
                     st.rerun()
                 else:
-                    st.error("Erreur lors de la creation.")
+                    st.error(msg)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with tab_practitioners:

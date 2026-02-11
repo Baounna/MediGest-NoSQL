@@ -32,7 +32,10 @@ class DBManager:
         self.db.appointments.create_index([("date_heure_debut", ASCENDING)])
         self.db.appointments.create_index([("practitioner_name", ASCENDING), ("date_heure_debut", ASCENDING)])
         self.db.logs.create_index([("timestamp", DESCENDING)])
-        self.db.users.create_index("username", unique=True)
+        try:
+            self.db.users.create_index("username", unique=True)
+        except Exception:
+            pass  # Index may already exist or duplicates prevent creation
         
         # Création d'un admin par défaut si la collection users est vide
         if self.db.users.count_documents({}) == 0:
@@ -51,6 +54,11 @@ class DBManager:
 
     def create_user(self, username, password, role, created_by):
         """Crée un nouvel utilisateur système."""
+        if not username or not password:
+            return False, "Identifiant et mot de passe requis."
+        # Vérifier si l'utilisateur existe déjà
+        if self.db.users.find_one({"username": username}):
+            return False, f"L'utilisateur '{username}' existe déjà."
         try:
             user_data = {
                 "username": username,
@@ -60,9 +68,9 @@ class DBManager:
             }
             self.db.users.insert_one(user_data)
             self.log_action(created_by, "CREATE_USER", f"Utilisateur {username} créé")
-            return True
+            return True, f"Utilisateur {username} créé avec succès."
         except Exception as e:
-            return False
+            return False, str(e)
 
     def get_all_users(self):
         return list(self.db.users.find({}, {"password": 0})) # Exclure le mot de passe
