@@ -1112,18 +1112,15 @@ def view_dashboard():
         st.markdown('<div class="med-card"><div class="med-card-header">Actions Rapides</div>', unsafe_allow_html=True)
         if st.button("📅 Nouveau Rendez-vous", use_container_width=True, key="dash_new_rdv"):
             st.session_state.current_accueil_tab = "➕ Nouveau Rendez-vous"
-            if "nav_choice" in st.session_state:
-                st.session_state.nav_choice = "Accueil"
+            st.session_state._redirect_to = "Accueil"
             st.rerun()
         if st.button("👤 Ajouter un Patient", use_container_width=True, key="dash_new_pat"):
             st.session_state.current_accueil_tab = "👤 Gestion Patients"
-            if "nav_choice" in st.session_state:
-                st.session_state.nav_choice = "Accueil"
+            st.session_state._redirect_to = "Accueil"
             st.rerun()
         if st.button("📋 Voir l'Agenda", use_container_width=True, key="dash_agenda"):
             st.session_state.current_accueil_tab = "📅 Agenda"
-            if "nav_choice" in st.session_state:
-                st.session_state.nav_choice = "Accueil"
+            st.session_state._redirect_to = "Accueil"
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -1638,6 +1635,11 @@ def main():
     if st.session_state.db.db is None:
         st.error("Impossible de se connecter a la base de donnees. Verifiez que MongoDB est lance.")
         return
+
+    # Handle redirects from dashboard quick actions (must be before radio widget)
+    if "_redirect_to" in st.session_state:
+        st.session_state.nav_choice = st.session_state._redirect_to
+        del st.session_state._redirect_to
 
     with st.sidebar:
         st.markdown("""
