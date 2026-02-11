@@ -1624,8 +1624,43 @@ def view_admin():
         st.markdown('<div class="med-card"><div class="med-card-header">Journal d\'audit</div>', unsafe_allow_html=True)
         logs = st.session_state.db.get_logs()
         if logs:
-            df_logs = pd.DataFrame(logs)
-            st.dataframe(df_logs, use_container_width=True)
+            rows_html = ""
+            for i, log in enumerate(logs):
+                ts = log.get("timestamp", "")
+                if hasattr(ts, "strftime"):
+                    ts = ts.strftime("%d/%m/%Y %H:%M")
+                action = log.get("action", "")
+                badge_color = "#0077B6"
+                if "DELETE" in action or "CANCEL" in action:
+                    badge_color = "#E63946"
+                elif "CREATE" in action:
+                    badge_color = "#2A9D8F"
+                elif "UPDATE" in action or "EDIT" in action:
+                    badge_color = "#E9C46A"
+                elif "LOGIN" in action:
+                    badge_color = "#457B9D"
+                row_bg = "#F8FAFC" if i % 2 == 0 else "#FFFFFF"
+                rows_html += f"""<tr style="background:{row_bg};border-bottom:1px solid #E2E8F0;">
+                    <td style="color:#1B2A4A !important;padding:10px 14px;font-size:0.88em;">{ts}</td>
+                    <td style="color:#1B2A4A !important;padding:10px 14px;font-size:0.88em;font-weight:500;">{log.get('user','')}</td>
+                    <td style="padding:10px 14px;"><span style="background:{badge_color};color:#fff;padding:3px 12px;border-radius:12px;font-size:0.8em;font-weight:600;">{action}</span></td>
+                    <td style="color:#1B2A4A !important;padding:10px 14px;font-size:0.88em;">{log.get('details','')}</td>
+                </tr>"""
+            st.markdown(f"""
+            <table style="width:100%;border-collapse:collapse;background:#FFFFFF;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+                <thead>
+                    <tr style="background:linear-gradient(90deg,#0077B6,#00B4D8);color:#fff;">
+                        <th style="padding:10px 14px;text-align:left;font-size:0.9em;">Date/Heure</th>
+                        <th style="padding:10px 14px;text-align:left;font-size:0.9em;">Utilisateur</th>
+                        <th style="padding:10px 14px;text-align:left;font-size:0.9em;">Action</th>
+                        <th style="padding:10px 14px;text-align:left;font-size:0.9em;">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+            """, unsafe_allow_html=True)
         else:
             st.info("Aucun log disponible.")
         st.markdown('</div>', unsafe_allow_html=True)
