@@ -338,3 +338,56 @@ class DBManager:
         ]
         return list(self.db.appointments.aggregate(pipeline))
 
+    def get_dashboard_stats(self):
+        """Retourne les KPIs pour le tableau de bord."""
+        today_start = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
+        today_end = datetime.datetime.combine(datetime.date.today(), datetime.time.max)
+
+        total_patients = self.db.patients.count_documents({})
+        total_appointments = self.db.appointments.count_documents({})
+        today_appointments = self.db.appointments.count_documents({
+            "date_heure_debut": {"$gte": today_start, "$lte": today_end}
+        })
+        active_practitioners = self.db.practitioners.count_documents({})
+        cancellation_rate = self.get_stats_cancellation_rate()
+
+        recent_logs = list(self.db.logs.find().sort("timestamp", DESCENDING).limit(5))
+
+        # Appointments by day of week
+        dow_pipeline = [
+            {"$match": {"statut": {"$ne": "Annulé"}}},
+            {"$group": {
+                "_id": {"$dayOfWeek": "$date_heure_debut"},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+        appts_by_day = list(self.db.appointments.aggregate(dow_pipeline))
+        day_names = {1: "Dim", 2: "Lun", 3: "Mar", 4: "Mer", 5: "Jeu", 6: "Ven", 7: "Sam"}
+        for item in appts_by_day:
+            item["jour"] = day_names.get(item["_id"], "?")
+
+        # Patient growth (by month)
+        growth_pipeline = [
+            {"$group": {
+                "_id": {
+                    "year": {"$year": "$created_at"},
+                    "month": {"$month": "$created_at"}
+                },
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id.year": 1, "_id.month": 1}}
+        ]
+        patient_growth = list(self.db.patients.aggregate(growth_pipeline))
+
+        return {
+            "total_patients": total_patients,
+            "total_appointments": total_appointments,
+            "today_appointments": today_appointments,
+            "active_practitioners": active_practitioners,
+            "cancellation_rate": cancellation_rate,
+            "recent_logs": recent_logs,
+            "appts_by_day": appts_by_day,
+            "patient_growth": patient_growth
+        }
+

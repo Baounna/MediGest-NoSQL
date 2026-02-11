@@ -244,3 +244,24 @@ L'interface utilise un système de navigation personnalisé. Par exemple, depuis
 | **Pymongo** | Driver DB | Communication native et performante avec MongoDB. |
 | **Pandas** | Manipulation Data | Traitement des données pour les tableaux et statistiques. |
 | **Plotly** | Dataviz | Génération de graphiques interactifs pour le dashboard. |
+| **Docker** | Conteneurisation | Déploiement simplifié avec Docker Compose. |
+
+---
+
+## 🎨 Interface Utilisateur
+
+L'application dispose d'une interface professionnelle personnalisée :
+
+- **Theme Medical** : Palette bleu/cyan professionnelle avec gradient sidebar
+- **Dashboard KPI** : Vue d'ensemble avec indicateurs clés (patients, RDV, taux d'annulation)
+- **Status Badges** : Badges colorés pour les statuts des rendez-vous (Confirmé, Annulé, Absent)
+- **Responsive Cards** : Cartes interactives avec effets hover et shadows
+- **Navigation fluide** : Onglets stylisés avec redirection intelligente entre les vues
+
+---
+
+## 👥 Contributeurs
+
+| Nom | Role |
+| :--- | :--- |
+| **Mohamed** | Développeur Full-Stack |
