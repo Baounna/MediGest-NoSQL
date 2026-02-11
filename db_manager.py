@@ -120,6 +120,18 @@ class DBManager:
             ]
         }))
 
+    def update_patient(self, patient_id, updated_data, updated_by):
+        """Met à jour les informations d'un patient."""
+        try:
+            self.db.patients.update_one(
+                {"_id": ObjectId(patient_id)},
+                {"$set": updated_data}
+            )
+            self.log_action(updated_by, "UPDATE_PATIENT", f"Patient {patient_id} mis à jour")
+            return True, "Informations patient mises à jour."
+        except Exception as e:
+            return False, str(e)
+
     # --- Gestion des Praticiens ---
     
     def get_practitioners(self):
@@ -146,6 +158,18 @@ class DBManager:
             self.db.practitioners.insert_one(practitioner)
             self.log_action(created_by, "CREATE_PRACTITIONER", f"Praticien {nom} ajouté")
             return True, "Praticien ajouté avec succès."
+        except Exception as e:
+            return False, str(e)
+
+    def update_practitioner(self, practitioner_id, updated_data, updated_by):
+        """Met à jour les informations d'un praticien."""
+        try:
+            self.db.practitioners.update_one(
+                {"_id": ObjectId(practitioner_id)},
+                {"$set": updated_data}
+            )
+            self.log_action(updated_by, "UPDATE_PRACTITIONER", f"Praticien {practitioner_id} mis à jour")
+            return True, "Informations praticien mises à jour."
         except Exception as e:
             return False, str(e)
 

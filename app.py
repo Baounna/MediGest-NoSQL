@@ -49,10 +49,36 @@ def logout():
 def view_accueil():
     st.header("🏢 Accueil & Secrétariat")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📅 Agenda", "👤 Gestion Patients", "➕ Nouveau Rendez-vous", "📋 Liste Globale"])
+    # Navigation avec état pour permettre la redirection (Remplacement des st.tabs standards)
+    tabs_options = ["📅 Agenda", "👤 Gestion Patients", "➕ Nouveau Rendez-vous", "📋 Liste Globale"]
+    
+    # Initialisation de l'onglet actif
+    if "current_accueil_tab" not in st.session_state:
+        st.session_state.current_accueil_tab = tabs_options[0]
+
+    # On utilise radio horizontal. 
+    # ASTUCE : On ne lie pas directement le 'key' du widget à notre variable de contrôle pour éviter le conflit.
+    # On utilise 'index' pour forcer la position.
+    try:
+        current_index = tabs_options.index(st.session_state.current_accueil_tab)
+    except ValueError:
+        current_index = 0
+
+    selected_tab = st.radio(
+        "Navigation", 
+        tabs_options, 
+        horizontal=True, 
+        label_visibility="collapsed", 
+        index=current_index
+    )
+    
+    # Mise à jour de l'état si l'utilisateur clique sur un onglet différent
+    if selected_tab != st.session_state.current_accueil_tab:
+        st.session_state.current_accueil_tab = selected_tab
+        st.rerun()
     
     # --- Onglet Agenda ---
-    with tab1:
+    if st.session_state.current_accueil_tab == "📅 Agenda":
         st.subheader("Agenda du jour")
         col1, col2 = st.columns([1, 3])
         with col1:
@@ -117,11 +143,11 @@ def view_accueil():
             st.info("Aucun rendez-vous pour cette date.")
 
     # --- Onglet Gestion Patients ---
-    with tab2:
+    elif st.session_state.current_accueil_tab == "👤 Gestion Patients":
         st.subheader("Dossiers Patients")
         
         # Barre de recherche globale
-        search_query = st.text_input("🔍 Rechercher un patient (Nom, Prénom ou ID)", "")
+        search_query = st.text_input("🔍 Rechercher un patient (Nom, Prénom)", "")
         
         if search_query:
             results = st.session_state.db.search_patients(search_query)
@@ -129,7 +155,14 @@ def view_accueil():
                 st.success(f"{len(results)} patient(s) trouvé(s)")
                 for pat in results:
                     with st.expander(f"📂 {pat['nom']} {pat['prenom']}"):
-                        st.write(f"**ID:** {pat['_id']}")
+                        # --- Feature Request: Bouton de redirection ---
+                        if st.button("📅 Prendre RDV pour ce patient", key=f"btn_nav_rdv_{pat['_id']}"):
+                            st.session_state.rdv_patient_results = [pat]
+                            st.session_state.rdv_search_performed = True
+                            st.session_state.current_accueil_tab = "➕ Nouveau Rendez-vous"
+                            st.rerun()
+                        
+                        #st.write(f"**ID:** {pat['_id']}")
                         st.write(f"**Tél:** {pat.get('telephone', 'N/A')}")
                         st.write(f"**Email:** {pat.get('email', 'N/A')}")
                         st.write(f"**Assurance:** {pat.get('assurance', 'N/A')}")
@@ -137,6 +170,32 @@ def view_accueil():
                         st.info(pat.get('notes_medicales', 'Aucune note'))
                         st.write("**Historique Visites:**")
                         st.table(pd.DataFrame(pat.get('historique_visites', [])))
+
+                        # --- Section Modification Patient ---
+                        with st.expander("📝 Modifier les informations"):
+                            with st.form(key=f"edit_patient_{pat['_id']}"):
+                                e_nom = st.text_input("Nom", value=pat['nom'])
+                                e_prenom = st.text_input("Prénom", value=pat['prenom'])
+                                e_tel = st.text_input("Téléphone", value=pat.get('telephone', ''))
+                                e_email = st.text_input("Email", value=pat.get('email', ''))
+                                e_assurance = st.text_input("Assurance", value=pat.get('assurance', ''))
+                                e_notes = st.text_area("Notes Médicales", value=pat.get('notes_medicales', ''))
+                                
+                                if st.form_submit_button("Enregistrer les modifications"):
+                                    updated_data = {
+                                        "nom": e_nom.upper(),
+                                        "prenom": e_prenom.capitalize(),
+                                        "telephone": e_tel,
+                                        "email": e_email,
+                                        "assurance": e_assurance,
+                                        "notes_medicales": e_notes
+                                    }
+                                    success, msg = st.session_state.db.update_patient(pat['_id'], updated_data, st.session_state.user["username"])
+                                    if success:
+                                        st.success(msg)
+                                        st.rerun()
+                                    else:
+                                        st.error(msg)
             else:
                 st.warning("Aucun patient trouvé.")
         
@@ -165,21 +224,23 @@ def view_accueil():
                     st.error("Nom et Prénom obligatoires.")
 
     # --- Onglet Nouveau RDV ---
-    with tab3:
+    elif st.session_state.current_accueil_tab == "➕ Nouveau Rendez-vous":
         st.subheader("Prendre un Rendez-vous")
         
         # --- Sélection du Patient (Stable avec état) ---
-        st.markdown("##### 1. Rechercher et Sélectionner le Patient")
-        
         # Initialisation de la liste des résultats dans la session si elle n'existe pas
         if 'rdv_patient_results' not in st.session_state:
             st.session_state.rdv_patient_results = []
         if 'rdv_search_performed' not in st.session_state:
             st.session_state.rdv_search_performed = False
 
+        selected_patient_id = None
+
+        # --- Section de Recherche (Toujours visible) ---
+        st.markdown("##### 1. Rechercher et Sélectionner le Patient")
         col_search, col_btn = st.columns([3, 1])
         with col_search:
-            search_query = st.text_input("Nom ou Prénom du patient", key="search_pat_input")
+            search_query = st.text_input("Rechercher par Nom, Prénom ou ID", key="search_pat_input", placeholder="Ex: Dupont ou 65b...")
         with col_btn:
             st.write("") 
             st.write("") 
@@ -189,25 +250,21 @@ def view_accueil():
                     st.session_state.rdv_patient_results = st.session_state.db.search_patients(search_query)
                 else:
                     st.session_state.rdv_patient_results = []
-                    st.warning("Veuillez saisir un nom.")
+                    st.warning("Veuillez saisir une recherche.")
 
-        selected_patient_id = None
-        
-        # Affichage du sélecteur basé sur les résultats stockés en session
+        # --- Affichage des résultats / Sélection actuelle ---
         if st.session_state.rdv_patient_results:
             # Création du dictionnaire {Label: ID}
             pat_options = {f"{p['nom']} {p['prenom']} (Tél: {p.get('telephone', 'N/A')})": p['_id'] for p in st.session_state.rdv_patient_results}
             
-            selected_label = st.selectbox("✅ Résultats trouvés :", list(pat_options.keys()), key="select_pat_final")
+            # Si un seul résultat (cas de la redirection), il est sélectionné par défaut
+            selected_label = st.selectbox("✅ Sélectionner le patient :", list(pat_options.keys()), key="select_pat_final")
             selected_patient_id = pat_options[selected_label]
-            st.info(f"Patient sélectionné : **{selected_label}**")
             
-        elif st.session_state.rdv_search_performed and search_query:
-            st.error(f"❌ Aucun patient trouvé pour '{search_query}'.")
-            st.markdown("💡 *Astuce : Vérifiez l'orthographe ou créez le patient dans l'onglet 'Gestion Patients'.*")
-            
-        else:
-            st.info("Veuillez effectuer une recherche ci-dessus pour afficher la liste des patients.")
+            if len(st.session_state.rdv_patient_results) == 1:
+                st.info(f"📍 Patient sélectionné : **{selected_label}**")
+        elif st.session_state.rdv_search_performed:
+            st.error("❌ Aucun patient trouvé. Veuillez vérifier l'orthographe ou l'ID.")
 
         st.markdown("---")
         st.markdown("##### 2. Détails du Rendez-vous")
@@ -241,7 +298,7 @@ def view_accueil():
                     st.error("Veuillez sélectionner un patient dans la liste ci-dessus.")
 
     # --- Onglet Liste Globale (Planning par Praticien) ---
-    with tab4:
+    elif st.session_state.current_accueil_tab == "📋 Liste Globale":
         st.subheader("🗓️ Planning par Praticien & Gestion des Aléas")
         
         all_appts = st.session_state.db.get_appointments()
@@ -384,10 +441,25 @@ def view_admin():
         if practitioners:
             # Affichage en liste avec bouton de suppression
             for p in practitioners:
-                col1, col2, col3 = st.columns([2, 2, 1])
+                col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
                 col1.write(f"**{p['nom']}**")
                 col2.write(f"_{p['specialite']}_")
-                if col3.button("🗑️ Supprimer", key=f"del_prac_{p['_id']}"):
+                
+                # Modification
+                with col3.popover("📝 Editer"):
+                    with st.form(key=f"edit_prac_{p['_id']}"):
+                        e_nom = st.text_input("Nom", value=p['nom'])
+                        e_spec = st.text_input("Spécialité", value=p['specialite'])
+                        if st.form_submit_button("Enregistrer"):
+                            updated_data = {"nom": e_nom, "specialite": e_spec}
+                            success, msg = st.session_state.db.update_practitioner(p['_id'], updated_data, st.session_state.user["username"])
+                            if success:
+                                st.success(msg)
+                                st.rerun()
+                            else:
+                                st.error(msg)
+
+                if col4.button("🗑️ Supprimer", key=f"del_prac_{p['_id']}"):
                     success, msg = st.session_state.db.delete_practitioner(p['_id'], st.session_state.user["username"])
                     if success:
                         st.success(msg)
