@@ -265,3 +265,4 @@ L'application dispose d'une interface professionnelle personnalisée :
 | Nom | Role |
 | :--- | :--- |
 | **Mohamed** | Développeur Full-Stack |
+| **Amine Bazaoui** | Développeur Full-Stack |
