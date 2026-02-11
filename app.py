@@ -169,32 +169,28 @@ st.markdown("""
     }
 
     /* === Expanders === */
-    details[data-testid="stExpander"] {
-        background: var(--bg-card) !important;
+    details, details[data-testid="stExpander"] {
+        background: #FFFFFF !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
         box-shadow: var(--shadow-sm) !important;
-        overflow: hidden;
-        margin-bottom: 8px;
+        overflow: hidden !important;
+        margin-bottom: 8px !important;
     }
-    details[data-testid="stExpander"] > summary {
+    summary, details > summary, details[data-testid="stExpander"] > summary {
         font-weight: 600 !important;
         padding: 14px 20px !important;
-        border-radius: var(--radius) !important;
         background: linear-gradient(135deg, #0077B6 0%, #035E7B 100%) !important;
     }
-    details[data-testid="stExpander"] > summary span,
-    details[data-testid="stExpander"] > summary p,
-    details[data-testid="stExpander"] > summary svg,
-    details[data-testid="stExpander"] > summary div {
+    summary *, details > summary *, details[data-testid="stExpander"] > summary * {
         color: #FFFFFF !important;
         fill: #FFFFFF !important;
     }
-    details[data-testid="stExpander"] > summary:hover {
+    summary:hover, details > summary:hover {
         background: linear-gradient(135deg, #005F8A 0%, #023E58 100%) !important;
     }
     /* Expander body content */
-    details[data-testid="stExpander"] > div[data-testid="stExpanderDetails"] {
+    details > div, details[data-testid="stExpander"] > div {
         background: #FFFFFF !important;
     }
 
@@ -899,11 +895,41 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* === Dataframe === */
+    /* === Dataframe — force light === */
     .stDataFrame {
         border-radius: var(--radius) !important;
         overflow: hidden;
         border: 1px solid var(--border);
+    }
+    .stDataFrame iframe,
+    .stDataFrame > div,
+    .stDataFrame canvas,
+    div[data-testid="stDataFrame"],
+    div[data-testid="stDataFrame"] > div,
+    div[data-testid="stDataFrame"] > div > div,
+    div[data-testid="stDataFrame"] [role="grid"],
+    div[data-testid="stDataFrame"] [role="gridcell"],
+    div[data-testid="stDataFrame"] [role="columnheader"],
+    div[data-testid="stDataFrame"] [role="row"] {
+        background-color: #FFFFFF !important;
+        color: #1B2A4A !important;
+    }
+
+    /* === Plotly charts — force white === */
+    .stPlotlyChart, .stPlotlyChart > div,
+    .stPlotlyChart iframe,
+    div[data-testid="stPlotlyChart"],
+    div[data-testid="stPlotlyChart"] > div {
+        background-color: #FFFFFF !important;
+    }
+    .js-plotly-plot, .plotly, .plot-container {
+        background-color: #FFFFFF !important;
+    }
+    .modebar, .modebar-group {
+        background-color: #FFFFFF !important;
+    }
+    .modebar-btn path {
+        fill: #5A6A85 !important;
     }
 
     /* === Divider === */
@@ -1459,10 +1485,13 @@ def view_responsable():
                 color_discrete_sequence=["#2c5364"]
             )
             fig.update_layout(
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(family="Inter"),
-                margin=dict(l=20, r=20, t=20, b=20)
+                template="plotly_white",
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                font=dict(family="Inter", color="#1B2A4A"),
+                margin=dict(l=20, r=20, t=20, b=20),
+                xaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
+                yaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
@@ -1476,13 +1505,16 @@ def view_responsable():
             fig2 = px.bar(
                 df_dow, x="jour", y="count",
                 labels={"jour": "Jour", "count": "Nombre de RDV"},
-                color_discrete_sequence=["#203a43"]
+                color_discrete_sequence=["#0077B6"]
             )
             fig2.update_layout(
-                plot_bgcolor="rgba(0,0,0,0)",
-                paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(family="Inter"),
-                margin=dict(l=20, r=20, t=20, b=20)
+                template="plotly_white",
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                font=dict(family="Inter", color="#1B2A4A"),
+                margin=dict(l=20, r=20, t=20, b=20),
+                xaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
+                yaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
             )
             st.plotly_chart(fig2, use_container_width=True)
         else:
@@ -1498,13 +1530,16 @@ def view_responsable():
         fig3 = px.area(
             df_growth, x="period", y="cumulative",
             labels={"period": "Periode", "cumulative": "Total Patients"},
-            color_discrete_sequence=["#2c5364"]
+            color_discrete_sequence=["#0077B6"]
         )
         fig3.update_layout(
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Inter"),
-            margin=dict(l=20, r=20, t=20, b=20)
+            template="plotly_white",
+            plot_bgcolor="#FFFFFF",
+            paper_bgcolor="#FFFFFF",
+            font=dict(family="Inter", color="#1B2A4A"),
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
+            yaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
         )
         st.plotly_chart(fig3, use_container_width=True)
     else:
