@@ -1551,7 +1551,35 @@ def view_admin():
     with tab_users:
         st.markdown('<div class="med-card"><div class="med-card-header">Utilisateurs existants</div>', unsafe_allow_html=True)
         users = st.session_state.db.get_all_users()
-        st.dataframe(pd.DataFrame(users), use_container_width=True)
+        if users:
+            user_rows = ""
+            for i, u in enumerate(users):
+                role = u.get("role", "")
+                role_colors = {"Administrateur": "#E63946", "Responsable": "#E9C46A", "Accueil": "#2A9D8F"}
+                rc = role_colors.get(role, "#0077B6")
+                created = u.get("created_at", "")
+                if hasattr(created, "strftime"):
+                    created = created.strftime("%d/%m/%Y %H:%M")
+                row_bg = "#F8FAFC" if i % 2 == 0 else "#FFFFFF"
+                user_rows += f"""<tr style="background:{row_bg};border-bottom:1px solid #E2E8F0;">
+                    <td style="color:#1B2A4A !important;padding:10px 14px;font-weight:500;">{u.get('username','')}</td>
+                    <td style="padding:10px 14px;"><span style="background:{rc};color:#fff;padding:3px 12px;border-radius:12px;font-size:0.8em;font-weight:600;">{role}</span></td>
+                    <td style="color:#1B2A4A !important;padding:10px 14px;font-size:0.88em;">{created}</td>
+                </tr>"""
+            st.markdown(f"""
+            <table style="width:100%;border-collapse:collapse;background:#FFFFFF;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+                <thead>
+                    <tr style="background:linear-gradient(90deg,#0077B6,#00B4D8);color:#fff;">
+                        <th style="padding:10px 14px;text-align:left;font-size:0.9em;">Identifiant</th>
+                        <th style="padding:10px 14px;text-align:left;font-size:0.9em;">Role</th>
+                        <th style="padding:10px 14px;text-align:left;font-size:0.9em;">Date de creation</th>
+                    </tr>
+                </thead>
+                <tbody>{user_rows}</tbody>
+            </table>
+            """, unsafe_allow_html=True)
+        else:
+            st.info("Aucun utilisateur.")
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="med-card"><div class="med-card-header">Creer un nouvel utilisateur</div>', unsafe_allow_html=True)
