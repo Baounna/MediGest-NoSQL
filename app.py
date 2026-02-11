@@ -1482,16 +1482,16 @@ def view_responsable():
             fig = px.bar(
                 df_workload, x="_id", y="count",
                 labels={"_id": "Medecin", "count": "Nombre de RDV"},
-                color_discrete_sequence=["#2c5364"]
+                color_discrete_sequence=["#0077B6"]
             )
             fig.update_layout(
                 template="plotly_white",
                 plot_bgcolor="#FFFFFF",
                 paper_bgcolor="#FFFFFF",
-                font=dict(family="Inter", color="#1B2A4A"),
+                font=dict(family="Inter", color="#1B2A4A", size=13),
                 margin=dict(l=20, r=20, t=20, b=20),
-                xaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
-                yaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
+                xaxis=dict(tickfont=dict(color="#1B2A4A", size=12), title_font=dict(color="#1B2A4A", size=13), gridcolor="#E2E8F0", linecolor="#1B2A4A"),
+                yaxis=dict(tickfont=dict(color="#1B2A4A", size=12), title_font=dict(color="#1B2A4A", size=13), gridcolor="#E2E8F0", linecolor="#1B2A4A"),
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
@@ -1511,10 +1511,10 @@ def view_responsable():
                 template="plotly_white",
                 plot_bgcolor="#FFFFFF",
                 paper_bgcolor="#FFFFFF",
-                font=dict(family="Inter", color="#1B2A4A"),
+                font=dict(family="Inter", color="#1B2A4A", size=13),
                 margin=dict(l=20, r=20, t=20, b=20),
-                xaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
-                yaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
+                xaxis=dict(tickfont=dict(color="#1B2A4A", size=12), title_font=dict(color="#1B2A4A", size=13), gridcolor="#E2E8F0", linecolor="#1B2A4A"),
+                yaxis=dict(tickfont=dict(color="#1B2A4A", size=12), title_font=dict(color="#1B2A4A", size=13), gridcolor="#E2E8F0", linecolor="#1B2A4A"),
             )
             st.plotly_chart(fig2, use_container_width=True)
         else:
@@ -1536,10 +1536,10 @@ def view_responsable():
             template="plotly_white",
             plot_bgcolor="#FFFFFF",
             paper_bgcolor="#FFFFFF",
-            font=dict(family="Inter", color="#1B2A4A"),
+            font=dict(family="Inter", color="#1B2A4A", size=13),
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
-            yaxis=dict(color="#1B2A4A", gridcolor="#E2E8F0"),
+            xaxis=dict(tickfont=dict(color="#1B2A4A", size=12), title_font=dict(color="#1B2A4A", size=13), gridcolor="#E2E8F0", linecolor="#1B2A4A"),
+            yaxis=dict(tickfont=dict(color="#1B2A4A", size=12), title_font=dict(color="#1B2A4A", size=13), gridcolor="#E2E8F0", linecolor="#1B2A4A"),
         )
         st.plotly_chart(fig3, use_container_width=True)
     else:
